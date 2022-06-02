@@ -13,7 +13,23 @@
  * ###################
  */
 function abbreviation(a, b) {
-    let aUpperOnly = a.replace(/[a-z]+/, '');
+    
+    let aUpperIndexs = [];
+    let aUpperOnly = '';
+    let aArray = []
+    let testString = '';
+    for (let i = 0; i< a.length; i ++) {
+        if (checkUpperCase(a[i])) {
+            aUpperOnly += a[i];
+            aUpperIndexs.push(i);
+            if (testString !== '') {
+                aArray.push(testString);
+                testString = '';
+            }
+        } else {
+            testString += a[i];
+        }
+    }
     // First check all uppercase contains in each string
     let memoizedTable1 = Array(aUpperOnly.length + 1).fill([]).map(() => {
         return Array(b.length + 1).fill(0);
@@ -22,7 +38,7 @@ function abbreviation(a, b) {
     for (let i = 1; i <= aUpperOnly.length; i++) {
         memoizedIndexs.push([]);
         let checkRow = false;
-        for (let j = 1; j < b.length; j++) {
+        for (let j = 1; j <= b.length; j++) {
             if (aUpperOnly[i-1] === b[j-1]) {
                 memoizedTable1[i][j] = memoizedTable1[i-1][j-1] + 1;
                 if(memoizedTable1[i-1][j-1] + 1>= i) {
@@ -38,23 +54,47 @@ function abbreviation(a, b) {
         }
     }
 
-    
-    let bUsed = Array(b.length + 1).fill(false);
-    // Write your code here
-    let memoizedTable2 = Array(a.length + 1).fill([]).map(() => {
-        return Array(b.length + 1).fill(0);
-    });
-    for (let i = 1; i <= a.length; i++) {
-        for (let j = 1; j <= b.length; j++) {
-            if (!checkUpperCase(a[i - 1]) && !bUsed[j] && a[i - 1].toUpperCase() === b[j - 1]) {
-                memoizedTable2[i][j] = memoizedTable2[i-1][j-1] + 1;
+    let wayTable = [];
+    const makingWay = (deep, arr = []) => {
+        if (deep < 0) {
+            wayTable.push([...arr]);
+            return;
+        }
+        for (const val of memoizedIndexs[deep]) {
+            if (val < arr[0] || arr.length === 0) {
+                arr.unshift(val)
+                makingWay(deep - 1, arr);
+                arr.shift();
             } else {
-                memoizedTable2[i][j] = memoizedTable2[i - 1][j] > memoizedTable2[i][j - 1] ? memoizedTable2[i - 1][j] : memoizedTable2[i][j - 1];
+                break;
             }
         }
     }
-    if (memoizedTable2[a.length][b.length] === b.length - countUsed) {
-        return 'YES';
+    // Making all way to choise UpperCase in B
+    makingWay(memoizedIndexs.length -1);
+
+    const checkWay = (way, index) => {
+        let aStart = index > 0 ? aUpperIndexs[index - 1] + 1 : 0;
+        let aEnd = index < aUpperIndexs.length ? aUpperIndexs[index] -1 : a.length -1; 
+        let bStart = index > 0 ? way[index - 1] + 1 : 0;
+        let bEnd = index < way.length ? way[index] -1 : b.length -1;
+        if (bEnd === bStart ) {
+            return true;
+        }
+        let memoizedTable1 = Array(aEnd - aStart + 2).fill([]).map(() => Array(bEnd - bStart + 2).fill(0));
+        return true;
+    }
+
+    for (let way of wayTable) {
+        let success = true;
+        for (let i = 0; i <= way.length && success; i++){
+            if (!checkWay(way, i)) {
+                success = false;
+            }
+        }
+        if (success) {
+            return 'YES';
+        }
     }
     return 'NO';
 }
